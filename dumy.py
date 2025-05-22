@@ -43,18 +43,18 @@ def get_color_for_log_level(level):
 st.set_page_config(page_title="UiPath Chatbot Dashboard", layout="wide")
 st.title("🤖 UiPath Chatbot UI - Streamlit")
 
-with st.expander("Select a Folder", expanded=True):
+with st.expander("Select a Folder", expanded=False):
     folders = api_get("Folders").get("value", [])
     folder_map = {f["DisplayName"]: f["Id"] for f in folders}
     selected_folder = st.selectbox("Choose a Folder", list(folder_map.keys()))
     folder_id = folder_map[selected_folder]
 
-with st.expander("Select a Process", expanded=True):
+with st.expander("Select a Process", expanded=False):
     processes = api_get("Releases", folder_id=folder_id).get("value", [])
     process_names = list({p["ProcessKey"] for p in processes})
     selected_process = st.selectbox("Choose a Process", process_names)
 
-with st.expander("Choose Job Status", expanded=True):
+with st.expander("Choose Job Status", expanded=False):
     job_state = st.selectbox("Select Job State", ["All", "Successful", "Faulted", "Stopped"])
 
 filter_clause = f"ProcessKey eq '{selected_process}'"
@@ -85,7 +85,7 @@ with st.expander("Select a Job", expanded=True):
         selected_job = None
 
 if selected_job:
-    with st.expander("Job Logs", expanded=True):
+    with st.expander("Job Logs", expanded=False):
         selected_log_level = st.selectbox("Select Log Level", ["All", "Fatal", "Error", "Warn", "Info", "Debug", "Trace", "Verbose"])
         page_size = st.selectbox("Logs per page", [25, 50, 100])
         if "job_log_offset" not in st.session_state:
