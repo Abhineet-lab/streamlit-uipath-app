@@ -7,7 +7,6 @@ import base64
 # Constants
 BEARER_TOKEN = st.secrets["BEARER_TOKEN"]
 BASE_URL = st.secrets["BASE_URL"]
-
 HEADERS = {
     "Authorization": f"Bearer {BEARER_TOKEN}",
     "Content-Type": "application/json"
@@ -88,30 +87,34 @@ if jobs:
 
     # Step 4: Filter logs by level
     st.header("Job Logs (Filtered by Job ID)")
-    log_levels = ["All", "Fatal", "Error", "Warn", "Info", "Debug", "Trace", "Verbose"]
-    selected_log_level = st.selectbox("Select Log Level", log_levels)
+
+    selected_log_level = st.selectbox("Select Log Level", ["All", "Fatal", "Error", "Warn", "Info", "Debug", "Trace", "Verbose"])
+    page_size = st.selectbox("Logs per page", [25, 50, 100], key="page_size_job")
+    if "job_log_offset" not in st.session_state:
+        st.session_state.job_log_offset = 0
 
     all_logs = api_get("RobotLogs", folder_id=folder_id).get("value", [])
     job_logs = [log for log in all_logs if log.get("JobKey") == selected_job["Key"]]
-
     if selected_log_level != "All":
         job_logs = [log for log in job_logs if log["Level"] == selected_log_level]
 
+    paged_logs = job_logs[st.session_state.job_log_offset: st.session_state.job_log_offset + page_size]
     log_text_output = ""
-    if job_logs:
-        for log in job_logs:
+
+    if paged_logs:
+        for log in paged_logs:
             log_color = get_color_for_log_level(log["Level"])
             message = f"[{log['TimeStamp']}] {log['Level']} - {log['Message']}"
             st.markdown(f"<div style='color:{log_color}; font-size:15px;'>{message}</div>", unsafe_allow_html=True)
             log_text_output += message + "\n"
 
-        # Convert logs to DataFrame
-        df_logs = pd.DataFrame(job_logs)
+        if st.button("Load More Logs"):
+            st.session_state.job_log_offset += page_size
+            st.rerun()
 
-        # Step 5: Choose download format
+        df_logs = pd.DataFrame(job_logs)
         file_format = st.selectbox("Choose download format - (TXT, CSV, XLSX)", ["TXT", "CSV", "XLSX"], key="format1")
 
-        # Generate file data
         if file_format == "TXT":
             file_data = log_text_output
             mime_type = "text/plain"
@@ -128,11 +131,8 @@ if jobs:
             mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             file_name = "uipath_job_logs.xlsx"
 
-        # Encode for download
-        if file_format in ["TXT", "CSV"]:
-            b64 = base64.b64encode(file_data.encode()).decode()
-        else:
-            b64 = base64.b64encode(file_data.read()).decode()
+        b64 = base64.b64encode(file_data.encode() if file_format != "XLSX" else file_data.read()).decode()
+        if file_format == "XLSX":
             file_data.seek(0)
 
         st.markdown(f"""
@@ -145,7 +145,6 @@ if jobs:
                 </a>
             </div>
         """, unsafe_allow_html=True)
-
     else:
         st.warning("No logs found for the selected filters.")
 else:
@@ -156,12 +155,27 @@ st.header("📜 All Logs for Selected Folder (Org Unit)")
 show_all_logs = st.checkbox("Show all logs for this folder", value=False)
 if show_all_logs:
     all_logs = api_get("RobotLogs", folder_id=folder_id).get("value", [])
+    selected_log_level2 = st.selectbox("Select Log Level", ["All", "Fatal", "Error", "Warn", "Info", "Debug", "Trace", "Verbose"], key="log_level_all")
+    page_size2 = st.selectbox("Logs per page (All Logs)", [25, 50, 100], key="page_size_all")
+
+    if "all_log_offset" not in st.session_state:
+        st.session_state.all_log_offset = 0
+
+    if selected_log_level2 != "All":
+        all_logs = [log for log in all_logs if log["Level"] == selected_log_level2]
+
+    paged_all_logs = all_logs[st.session_state.all_log_offset: st.session_state.all_log_offset + page_size2]
     full_log_text = ""
-    for log in all_logs:
+
+    for log in paged_all_logs:
         log_color = get_color_for_log_level(log["Level"])
         message = f"[{log['TimeStamp']}] {log['Level']} - {log['Message']}"
         st.markdown(f"<div style='color:{log_color}; font-size:15px;'>{message}</div>", unsafe_allow_html=True)
         full_log_text += message + "\n"
+
+    if st.button("Load More All Logs"):
+        st.session_state.all_log_offset += page_size2
+        st.rerun()
 
     if all_logs:
         df_all_logs = pd.DataFrame(all_logs)
@@ -183,10 +197,8 @@ if show_all_logs:
             mime_type2 = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             file_name2 = "uipath_all_logs.xlsx"
 
-        if file_format2 in ["TXT", "CSV"]:
-            b64_2 = base64.b64encode(file_data2.encode()).decode()
-        else:
-            b64_2 = base64.b64encode(file_data2.read()).decode()
+        b64_2 = base64.b64encode(file_data2.encode() if file_format2 != "XLSX" else file_data2.read()).decode()
+        if file_format2 == "XLSX":
             file_data2.seek(0)
 
         st.markdown(f"""
