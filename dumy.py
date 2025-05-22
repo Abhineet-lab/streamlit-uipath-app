@@ -43,18 +43,18 @@ def get_color_for_log_level(level):
 st.set_page_config(page_title="UiPath Chatbot Dashboard", layout="wide")
 st.title("🤖 UiPath Chatbot UI - Streamlit")
 
-with st.expander("📁 Select a Folder", expanded=True):
+with st.expander("Select a Folder", expanded=True):
     folders = api_get("Folders").get("value", [])
     folder_map = {f["DisplayName"]: f["Id"] for f in folders}
     selected_folder = st.selectbox("Choose a Folder", list(folder_map.keys()))
     folder_id = folder_map[selected_folder]
 
-with st.expander("🔄 Select a Process", expanded=True):
+with st.expander("Select a Process", expanded=True):
     processes = api_get("Releases", folder_id=folder_id).get("value", [])
     process_names = list({p["ProcessKey"] for p in processes})
     selected_process = st.selectbox("Choose a Process", process_names)
 
-with st.expander("🎯 Choose Job Status", expanded=True):
+with st.expander("Choose Job Status", expanded=True):
     job_state = st.selectbox("Select Job State", ["All", "Successful", "Faulted", "Stopped"])
 
 filter_clause = f"ProcessKey eq '{selected_process}'"
@@ -68,7 +68,7 @@ params = {
 }
 jobs = api_get("Jobs", params=None, folder_id=folder_id).get("value", [])
 
-with st.expander("🔎 Select a Job", expanded=True):
+with st.expander("Select a Job", expanded=True):
     if jobs:
         st.success(f"Found {len(jobs)} job(s)")
         job_options = [
@@ -85,7 +85,7 @@ with st.expander("🔎 Select a Job", expanded=True):
         selected_job = None
 
 if selected_job:
-    with st.expander("📜 Job Logs", expanded=True):
+    with st.expander("Job Logs", expanded=True):
         selected_log_level = st.selectbox("Select Log Level", ["All", "Fatal", "Error", "Warn", "Info", "Debug", "Trace", "Verbose"])
         page_size = st.selectbox("Logs per page", [25, 50, 100])
         if "job_log_offset" not in st.session_state:
@@ -106,7 +106,7 @@ if selected_job:
                 st.markdown(f"<div style='color:{log_color}; font-size:15px;'>{message}</div>", unsafe_allow_html=True)
                 log_text_output += message + "\n"
 
-            if st.button("🔁 Load More Logs"):
+            if st.button("Load More Logs"):
                 st.session_state.job_log_offset += page_size
                 st.rerun()
 
@@ -146,7 +146,7 @@ if selected_job:
         else:
             st.warning("No logs found for the selected filters.")
 
-with st.expander("📦 All Logs in Folder (Optional)", expanded=False):
+with st.expander("All Logs in Folder (Optional)", expanded=False):
     show_all_logs = st.checkbox("Show all logs in this folder")
     if show_all_logs:
         # Initialize pagination offset in session state if not set
@@ -177,7 +177,7 @@ with st.expander("📦 All Logs in Folder (Optional)", expanded=False):
                     unsafe_allow_html=True
                 )
 
-            if st.button("🔁 Load More Logs (All Logs)"):
+            if st.button("Load More Logs (All Logs)"):
                 st.session_state.all_logs_offset += page_size_all
                 st.rerun()
 
