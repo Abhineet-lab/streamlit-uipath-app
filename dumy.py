@@ -149,11 +149,75 @@ if selected_job:
 with st.expander("📦 All Logs in Folder (Optional)", expanded=False):
     show_all_logs = st.checkbox("Show all logs in this folder")
     if show_all_logs:
+        # Initialize pagination offset in session state if not set
+        if "all_logs_offset" not in st.session_state:
+            st.session_state.all_logs_offset = 0
+
+        selected_log_level_all = st.selectbox("Select Log Level for All Logs", ["All", "Fatal", "Error", "Warn", "Info", "Debug", "Trace", "Verbose"], key="all_logs_level")
+        page_size_all = st.selectbox("Logs per page for All Logs", [25, 50, 100], key="all_logs_page_size")
+
         all_logs = api_get("RobotLogs", folder_id=folder_id).get("value", [])
-        for log in all_logs:
-            log_color = get_color_for_log_level(log["Level"])
-            st.markdown(
-                f"<div style='color:{log_color}; font-size:15px;'>"
-                f"[{log['TimeStamp']}] {log['Level']} - {log['Message']}</div>",
-                unsafe_allow_html=True
-            )
+
+        # Filter by log level if needed
+        if selected_log_level_all != "All":
+            filtered_logs = [log for log in all_logs if log["Level"] == selected_log_level_all]
+        else:
+            filtered_logs = all_logs
+
+        # Pagination
+        paged_logs_all = filtered_logs[st.session_state.all_logs_offset : st.session_state.all_logs_offset + page_size_all]
+
+        # Display logs
+        if paged_logs_all:
+            for log in paged_logs_all:
+                log_color = get_color_for_log_level(log["Level"])
+                st.markdown(
+                    f"<div style='color:{log_color}; font-size:15px;'>"
+                    f"[{log['TimeStamp']}] {log['Level']} - {log['Message']}</div>",
+                    unsafe_allow_html=True
+                )
+
+            if st.button("🔁 Load More Logs (All Logs)"):
+                st.session_state.all_logs_offset += page_size_all
+                st.experimental_rerun()
+
+            # Prepare logs text for download
+            log_text_all = "\n".join([f"[{log['TimeStamp']}] {log['Level']} - {log['Message']}" for log in filtered_logs])
+
+            # Create dataframe for download
+            df_all_logs = pd.DataFrame(filtered_logs)
+
+            file_format_all = st.selectbox("Choose download format for All Logs", ["TXT", "CSV", "XLSX"], key="all_logs_download_format")
+
+            if file_format_all == "TXT":
+                file_data_all = log_text_all
+                mime_type_all = "text/plain"
+                file_name_all = "uipath_all_logs.txt"
+            elif file_format_all == "CSV":
+                file_data_all = df_all_logs.to_csv(index=False)
+                mime_type_all = "text/csv"
+                file_name_all = "uipath_all_logs.csv"
+            elif file_format_all == "XLSX":
+                buffer_all = BytesIO()
+                df_all_logs.to_excel(buffer_all, index=False)
+                buffer_all.seek(0)
+                file_data_all = buffer_all
+                mime_type_all = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                file_name_all = "uipath_all_logs.xlsx"
+
+            b64_all = base64.b64encode(file_data_all.encode() if file_format_all != "XLSX" else file_data_all.read()).decode()
+            if file_format_all == "XLSX":
+                file_data_all.seek(0)
+
+            st.markdown(f"""
+                <div style="text-align: right; margin-top: 20px;">
+                    <a href="data:{mime_type_all};base64,{b64_all}" download="{file_name_all}">
+                        <button style="background-color: #4CAF50; color: white; padding: 10px 20px;
+                                       border: none; border-radius: 5px; cursor: pointer;">
+                            📥 Download All Logs as {file_format_all}
+                        </button>
+                    </a>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.warning("No logs found for the selected filters.")
