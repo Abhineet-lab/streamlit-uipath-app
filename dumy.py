@@ -108,7 +108,7 @@ if selected_job:
 
             if st.button("🔁 Load More Logs"):
                 st.session_state.job_log_offset += page_size
-                st.experimental_rerun()
+                st.rerun()
 
             # Download logs
             df_logs = pd.DataFrame(job_logs)
@@ -179,7 +179,7 @@ with st.expander("📦 All Logs in Folder (Optional)", expanded=False):
 
             if st.button("🔁 Load More Logs (All Logs)"):
                 st.session_state.all_logs_offset += page_size_all
-                st.experimental_rerun()
+                st.rerun()
 
             # Prepare logs text for download
             log_text_all = "\n".join([f"[{log['TimeStamp']}] {log['Level']} - {log['Message']}" for log in filtered_logs])
