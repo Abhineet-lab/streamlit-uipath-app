@@ -68,7 +68,7 @@ params = {
 }
 jobs = api_get("Jobs", params=None, folder_id=folder_id).get("value", [])
 
-with st.expander("Select a Job", expanded=True):
+with st.expander("Select a Job", expanded=False):
     if jobs:
         st.success(f"Found {len(jobs)} job(s)")
         job_options = [
