@@ -109,7 +109,7 @@ if jobs:
         df_logs = pd.DataFrame(job_logs)
 
         # Step 5: Choose download format
-        file_format = st.selectbox("Choose download format", ["TXT", "CSV", "XLSX"], key="format1")
+        file_format = st.selectbox("Choose download format - (TXT, CSV, XLSX)", ["TXT", "CSV", "XLSX"], key="format1")
 
         # Generate file data
         if file_format == "TXT":
