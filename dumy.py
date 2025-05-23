@@ -53,8 +53,10 @@ with st.expander("Select a Folder", expanded=False):
     folder_id = folder_map[selected_folder]
 
 with st.expander("Select a Process", expanded=False):
-    processes = api_get("Releases", folder_id=folder_id).get("value", [])
-    process_names = list({p["ProcessKey"] for p in processes})
+    with st.spinner("Fetching processes..."):
+        time.sleep(1)
+        processes = api_get("Releases", folder_id=folder_id).get("value", [])
+        process_names = list({p["ProcessKey"] for p in processes})
     selected_process = st.selectbox("Choose a Process", process_names)
 
 with st.expander("Choose Job Status", expanded=False):
