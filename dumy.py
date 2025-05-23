@@ -176,7 +176,7 @@ with st.expander("All Logs in Folder (Optional)", expanded=False):
     if show_all_logs:
         # Initialize pagination offset in session state if not set
         if "all_logs_offset" not in st.session_state:
-            st.session_state.all_logs_offset = 0
+            st.session_state.all_logs_offset = 1    #changed from 0 to 1
 
         selected_log_level_all = st.selectbox("Select Log Level for All Logs", ["All", "Fatal", "Error", "Warn", "Info", "Debug", "Trace", "Verbose"], key="all_logs_level")
         page_size_all = st.selectbox("Logs per page for All Logs", [25, 50, 100], key="all_logs_page_size")
@@ -188,6 +188,17 @@ with st.expander("All Logs in Folder (Optional)", expanded=False):
             filtered_logs = [log for log in all_logs if log["Level"] == selected_log_level_all]
         else:
             filtered_logs = all_logs
+
+        total_logs = len(filtered_logs)
+        total_pages = (total_logs + page_size_all - 1) // page_size_all
+        # Clamp page number
+        st.session_state.all_logs_offset = max(1, min(st.session_state.all_logs_offset, total_pages))
+
+        start_idx = (st.session_state.all_logs_offset - 1) * page_size_all
+        end_idx = start_idx + page_size_all
+        paged_log = filtered_logs[start_idx:end_idx]
+
+        log_text_output = ""
 
         # Pagination
         paged_logs_all = filtered_logs[st.session_state.all_logs_offset : st.session_state.all_logs_offset + page_size_all]
@@ -202,9 +213,21 @@ with st.expander("All Logs in Folder (Optional)", expanded=False):
                     unsafe_allow_html=True
                 )
 
-            if st.button("Load More Logs (All Logs)"):
-                st.session_state.all_logs_offset += page_size_all
-                st.rerun()
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col1:
+                if st.button("⬅️ Previous logs"):
+                    if st.session_state.all_logs_offset > 1:
+                        st.session_state.all_logs_offset -= 1
+                        st.rerun()
+            with col2:
+                st.markdown(
+                    f"<div style='text-align:center; font-weight:bold;'>Page {st.session_state.all_logs_offset} of {total_pages}</div>",
+                    unsafe_allow_html=True)
+            with col3:
+                if st.button("Next logs ➡️"):
+                    if st.session_state.all_logs_offset < total_pages:
+                        st.session_state.all_logs_offset += 1
+                        st.rerun()
 
             # Prepare logs text for download
             log_text_all = "\n".join([f"[{log['TimeStamp']}] {log['Level']} - {log['Message']}" for log in filtered_logs])
