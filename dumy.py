@@ -172,7 +172,7 @@ if selected_job:
             st.warning("No logs found for the selected filters.")
 
 with st.expander("All Logs in Folder (Optional)", expanded=False):
-    show_all_logs = st.checkbox("Show all logs in this folder")
+    show_all_logs = st.toggle("Show all logs in this folder")
     if show_all_logs:
         # Initialize pagination offset in session state if not set
         if "all_logs_offset" not in st.session_state:
