@@ -44,8 +44,10 @@ st.set_page_config(page_title="UiPath Chatbot Dashboard", layout="wide")
 st.title("🤖 UiPath Log Analyzer - Streamlit")
 
 with st.expander("Select a Folder", expanded=False):
-    folders = api_get("Folders").get("value", [])
-    folder_map = {f["DisplayName"]: f["Id"] for f in folders}
+    with st.spinner("Loading folders..."):
+        time.sleep(1)
+        folders = api_get("Folders").get("value", [])
+        folder_map = {f["DisplayName"]: f["Id"] for f in folders}
     selected_folder = st.selectbox("Choose a Folder", list(folder_map.keys()))
     folder_id = folder_map[selected_folder]
 
