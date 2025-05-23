@@ -41,7 +41,7 @@ def get_color_for_log_level(level):
     }.get(level, "#000000")
 
 st.set_page_config(page_title="UiPath Chatbot Dashboard", layout="wide")
-st.title("🤖 UiPath Chatbot UI - Streamlit")
+st.title("🤖 UiPath Log Analyzer - Streamlit")
 
 with st.expander("Select a Folder", expanded=False):
     folders = api_get("Folders").get("value", [])
