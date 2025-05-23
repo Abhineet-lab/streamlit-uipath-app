@@ -86,17 +86,30 @@ with st.expander("Select a Job", expanded=False):
 
 if selected_job:
     with st.expander("Job Logs", expanded=False):
-        selected_log_level = st.selectbox("Select Log Level", ["All", "Fatal", "Error", "Warn", "Info", "Debug", "Trace", "Verbose"])
+        selected_log_level = st.selectbox("Select Log Level",
+                                          ["All", "Fatal", "Error", "Warn", "Info", "Debug", "Trace", "Verbose"])
         page_size = st.selectbox("Logs per page", [25, 50, 100])
-        if "job_log_offset" not in st.session_state:
-            st.session_state.job_log_offset = 0
+
+        # Session state for pagination
+        if "job_log_page" not in st.session_state:
+            st.session_state.job_log_page = 1
 
         all_logs = api_get("RobotLogs", folder_id=folder_id).get("value", [])
         job_logs = [log for log in all_logs if log.get("JobKey") == selected_job["Key"]]
+
         if selected_log_level != "All":
             job_logs = [log for log in job_logs if log["Level"] == selected_log_level]
 
-        paged_logs = job_logs[st.session_state.job_log_offset: st.session_state.job_log_offset + page_size]
+        total_logs = len(job_logs)
+        total_pages = (total_logs + page_size - 1) // page_size
+
+        # Clamp page number
+        st.session_state.job_log_page = max(1, min(st.session_state.job_log_page, total_pages))
+
+        start_idx = (st.session_state.job_log_page - 1) * page_size
+        end_idx = start_idx + page_size
+        paged_logs = job_logs[start_idx:end_idx]
+
         log_text_output = ""
 
         if paged_logs:
@@ -106,9 +119,21 @@ if selected_job:
                 st.markdown(f"<div style='color:{log_color}; font-size:15px;'>{message}</div>", unsafe_allow_html=True)
                 log_text_output += message + "\n"
 
-            if st.button("Load More Logs"):
-                st.session_state.job_log_offset += page_size
-                st.rerun()
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col1:
+                if st.button("⬅️ Previous"):
+                    if st.session_state.job_log_page > 1:
+                        st.session_state.job_log_page -= 1
+                        st.rerun()
+            with col2:
+                st.markdown(
+                    f"<div style='text-align:center; font-weight:bold;'>Page {st.session_state.job_log_page} of {total_pages}</div>",
+                    unsafe_allow_html=True)
+            with col3:
+                if st.button("Next ➡️"):
+                    if st.session_state.job_log_page < total_pages:
+                        st.session_state.job_log_page += 1
+                        st.rerun()
 
             # Download logs
             df_logs = pd.DataFrame(job_logs)
